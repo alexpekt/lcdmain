@@ -1,0 +1,13 @@
+#!/usr/bin/expect
+
+
+spawn ssh -p 1989 root@192.168.1.141
+expect "password:" { send "admin\r" }
+expect "# "
+send "ps -eo pid,args | grep '/home/test2' | grep -v grep | awk '{print \$1}' | xargs kill -9\r"
+expect "# "
+send "exit\r"
+expect eof
+
+
+

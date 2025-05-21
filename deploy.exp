@@ -1,0 +1,26 @@
+#!/usr/bin/expect
+#expect deploy.exp
+# Сборка Go-приложения
+spawn bash -c "GOOS=linux GOARCH=arm GOARM=5 go build -o test2 ."
+expect eof
+
+# Копирование файла
+spawn scp -P 1989 ./test2 root@192.168.1.141:/home/
+expect {
+    "password:" {
+        send "admin\r"
+        exp_continue
+    }
+    eof
+}
+
+# Запуск файла на удалённом сервере
+spawn ssh -p 1989 root@192.168.1.141 "/home/test2"
+expect {
+    "password:" {
+        send "admin\r"
+        exp_continue
+    }
+    eof
+}
+interact
