@@ -63,38 +63,41 @@ func page1() error {
 	if err := lcdClear(); err != nil {
 		return err
 	}
-	if err := lcdWriteFontText3("PAGE 1", 0, 0); err != nil {
+	if err := lcdWriteFontText3("PAGE 1", 0, 3); err != nil {
 		return err
 	}
-	return lcdWriteFontText3("IP: "+globalConfig.IP, 0, 1)
+	if err := lcdWriteFontText3("IP:", 2, 0); err != nil {
+		return err
+	}
+	return lcdWriteFontText3(globalConfig.IP, 3, 0)
 }
 
 func page2() error {
 	if err := lcdClear(); err != nil {
 		return err
 	}
-	if err := lcdWriteFontText3("PAGE 2", 0, 0); err != nil {
+	if err := lcdWriteFontText3("PAGE 2", 0, 3); err != nil {
 		return err
 	}
-	return lcdWriteFontText3("SET1: "+fmt.Sprintf("%v", globalConfig.Set1), 0, 1)
+	return lcdWriteFontText3("SET1: "+fmt.Sprintf("%v", globalConfig.Set1), 3, 0)
 }
 
 func page3() error {
 	if err := lcdClear(); err != nil {
 		return err
 	}
-	if err := lcdWriteFontText3("PAGE 3", 0, 0); err != nil {
+	if err := lcdWriteFontText3("PAGE 3", 0, 3); err != nil {
 		return err
 	}
-	return lcdWriteFontText3("SET2: "+fmt.Sprintf("%v", globalConfig.Set2), 0, 1)
+	return lcdWriteFontText3("SET2: "+fmt.Sprintf("%v", globalConfig.Set2), 3, 0)
 }
 
 func page4() error {
 	if err := lcdClear(); err != nil {
 		return err
 	}
-	if err := lcdWriteFontText3("PAGE 4", 0, 0); err != nil {
+	if err := lcdWriteFontText3("PAGE 4", 0, 3); err != nil {
 		return err
 	}
-	return lcdWriteFontText3("SET3: "+fmt.Sprintf("%v", globalConfig.Set3), 0, 1)
+	return lcdWriteFontText3("SET3: "+fmt.Sprintf("%v", globalConfig.Set3), 3, 0)
 }

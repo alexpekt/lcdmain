@@ -9,9 +9,9 @@ import (
 // Config структура для настроек
 type Config struct {
 	IP   string `json:"ip"`
-	Set1 bool   `json:"set1"`
-	Set2 bool   `json:"set2"`
-	Set3 bool   `json:"set3"`
+	Set1 string `json:"set1"`
+	Set2 string `json:"set2"`
+	Set3 string `json:"set3"`
 }
 
 // LoadOrCreateConfig проверяет наличие config.json и создает шаблонный, если он отсутствует
@@ -20,10 +20,10 @@ func LoadOrCreateConfig(configFile string) (Config, error) {
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		// Файл не существует, создаем шаблонный
 		defaultConfig := Config{
-			IP:   "192.168.120.99",
-			Set1: false,
-			Set2: false,
-			Set3: false,
+			IP:   "192.168.120.9",
+			Set1: "YES",
+			Set2: "NO",
+			Set3: "NO",
 		}
 
 		// Преобразуем структуру в JSON
