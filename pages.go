@@ -11,7 +11,7 @@ func page11() error {
 		fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
 		os.Exit(1)
 	}
-	if err := lcdWriteFontText3("ESIL2", 0, 0); err != nil {
+	if err := lcdWriteFontText3("ESIL", 0, 0); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
 		os.Exit(1)
 	}

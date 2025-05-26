@@ -99,43 +99,42 @@ func main() {
 	for {
 		key := GetCurrentKey()
 
-		switch key {
-		case "UP":
-			if selected {
-				// UP -> вниз по списку (вперёд)
+		if selected {
+			switch key {
+			case "UP":
+				// Перемещаемся вперёд по списку страниц
 				currentPage++
 				if currentPage >= len(pages) {
 					currentPage = 0
 				}
 				_ = lcdClear()
-				_ = lcdWriteFontText3(fmt.Sprintf("Выбор: Page %d", currentPage+1), 0, 0)
-			}
-		case "DOWN":
-			if selected {
-				// DOWN -> вверх по списку (назад)
+				_ = lcdWriteFontText3(fmt.Sprintf("SELECT: PAGE %d", currentPage+1), 0, 0)
+
+			case "DOWN":
+				// Перемещаемся назад по списку страниц
 				currentPage--
 				if currentPage < 0 {
 					currentPage = len(pages) - 1
 				}
 				_ = lcdClear()
-				_ = lcdWriteFontText3(fmt.Sprintf("Выбор: Page %d", currentPage+1), 0, 0)
-			}
-		case "ENT":
-			if !selected {
-				// Входим в режим выбора страницы
-				selected = true
-				_ = lcdClear()
-				_ = lcdWriteFontText3(fmt.Sprintf("Выбор: Page %d", currentPage+1), 0, 0)
-			} else {
-				// Выбираем и отображаем страницу
+				_ = lcdWriteFontText3(fmt.Sprintf("SELECT: PAGE %d", currentPage+1), 0, 0)
+
+			case "ENT":
+				// Подтверждаем выбор — запускаем соответствующую страницу
 				selected = false
 				_ = pages[currentPage]()
-			}
-		case "ESC":
-			// Отмена выбора — возврат к page11()
-			if selected {
+
+			case "ESC":
+				// Отмена выбора — возвращаемся на главную
 				selected = false
 				_ = page11()
+			}
+		} else {
+			// Вход в режим выбора по нажатию ENT
+			if key == "ENT" {
+				selected = true
+				_ = lcdClear()
+				_ = lcdWriteFontText3(fmt.Sprintf("SELECT: PAGE %d", currentPage+1), 0, 0)
 			}
 		}
 

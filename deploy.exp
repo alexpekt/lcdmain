@@ -1,7 +1,7 @@
 #!/usr/bin/expect
 #expect deploy.exp
 # Сборка Go-приложения
-spawn bash -c "GOOS=linux GOARCH=arm GOARM=5 ю"
+spawn bash -c "GOOS=linux GOARCH=arm GOARM=5 go build -o test2 ."
 expect eof
 
 # Копирование файла
