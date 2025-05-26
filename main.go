@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var globalConfig Config
+
 func lcdWriteFontText3(text string, page, col int) error {
 	err := lcdSetPosition(page, col)
 	if err != nil {
@@ -33,8 +35,14 @@ func lcdWriteFontText3(text string, page, col int) error {
 
 	return nil
 }
+func GetCurrentKey() string {
+	keyMutex.Lock()
+	defer keyMutex.Unlock()
+	return currentKey
+}
 
 func main() {
+	go mainkey()
 	defer func() {
 		if err := cleanupGPIO(); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to cleanup GPIO: %v\n", err)
@@ -42,12 +50,14 @@ func main() {
 	}()
 	configFile := "config.json"
 	config, err := LoadOrCreateConfig(configFile)
+	globalConfig = config
 	if err != nil {
 		fmt.Printf("Ошибка: %v\n", err)
 		return
 	}
+
 	// Используйте config.IP, config.Set1, config.Set2, config.Set3 в вашем коде
-	fmt.Printf("IP: %s, Set1: %v, Set2: %v, Set3: %v\n", config.IP, config.Set1, config.Set2, config.Set3)
+	// fmt.Printf("IP: %s, Set1: %v, Set2: %v, Set3: %v\n", config.IP, config.Set1, config.Set2, config.Set3)
 	if err := lcdInitPins(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to initialize pins: %v\n", err)
 		os.Exit(1)
@@ -64,19 +74,108 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
 		os.Exit(1)
 	}
-	if err := page1(); err != nil {
+	if err := page11(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to page1: %v\n", err)
 		os.Exit(1)
 	}
-	config.IP = "192.168.120.104" // Новое значение IP
+	// config.IP = "192.168.120.105" // Новое значение IP
 	err = SaveConfig(config, configFile)
 	if err != nil {
 		fmt.Printf("Ошибка при сохранении конфигурации: %v\n", err)
 		return
 	}
-	if err := mainkey(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to page1: %v\n", err)
+
+	pages := []func() error{page1, page2, page3, page4}
+
+	currentPage := 0
+	selected := false // false = режим просмотра, true = режим выбора
+
+	// Отображаем дефолтную страницу page11()
+	if err := page11(); err != nil {
+		fmt.Fprintf(os.Stderr, "Ошибка при запуске page11: %v\n", err)
 		os.Exit(1)
 	}
 
+	for {
+		key := GetCurrentKey()
+
+		switch key {
+		case "UP":
+			if selected {
+				// UP -> вниз по списку (вперёд)
+				currentPage++
+				if currentPage >= len(pages) {
+					currentPage = 0
+				}
+				_ = lcdClear()
+				_ = lcdWriteFontText3(fmt.Sprintf("Выбор: Page %d", currentPage+1), 0, 0)
+			}
+		case "DOWN":
+			if selected {
+				// DOWN -> вверх по списку (назад)
+				currentPage--
+				if currentPage < 0 {
+					currentPage = len(pages) - 1
+				}
+				_ = lcdClear()
+				_ = lcdWriteFontText3(fmt.Sprintf("Выбор: Page %d", currentPage+1), 0, 0)
+			}
+		case "ENT":
+			if !selected {
+				// Входим в режим выбора страницы
+				selected = true
+				_ = lcdClear()
+				_ = lcdWriteFontText3(fmt.Sprintf("Выбор: Page %d", currentPage+1), 0, 0)
+			} else {
+				// Выбираем и отображаем страницу
+				selected = false
+				_ = pages[currentPage]()
+			}
+		case "ESC":
+			// Отмена выбора — возврат к page11()
+			if selected {
+				selected = false
+				_ = page11()
+			}
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
 }
+
+// if err := mainkey(); err != nil {
+// 	fmt.Fprintf(os.Stderr, "Failed to page1: %v\n", err)
+// 	os.Exit(1)
+// }
+// for {
+// 	key := GetCurrentKey()
+// 	if key != "" {
+// 		// fmt.Println("Текущее состояние клавиши:", key)
+// 	}
+
+// 	// Можно выполнять действия в зависимости от нажатия:
+// 	if key == "ENT" {
+// 		_ = page12()
+
+// 	}
+// 	time.Sleep(500 * time.Millisecond)
+// }
+
+// key := GetCurrentKey()
+// switch key {
+// case "UP":
+// 	_ = lcdClear()
+// 	_ = lcdWriteFontText3("UP PRESS", 0, 0)
+// case "ESC":
+// 	_ = lcdClear()
+// 	_ = lcdWriteFontText3("ESC PRESS", 0, 0)
+// case "ENT":
+// 	_ = lcdClear()
+// 	_ = lcdWriteFontText3("ENT PRESS", 0, 0)
+// case "DOWN":
+// 	_ = lcdClear()
+// 	_ = lcdWriteFontText3("DOWN PRESS", 0, 0)
+// case "NO_KEY":
+// 	_ = page1()
+// }

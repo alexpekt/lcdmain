@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -45,6 +46,11 @@ func DetectKey(voltage float64) string {
 	}
 }
 
+var (
+	currentKey string
+	keyMutex   sync.Mutex
+)
+
 func mainkey() error {
 	var lastKey string
 
@@ -58,44 +64,47 @@ func mainkey() error {
 
 		key := DetectKey(voltage)
 		if key != lastKey {
-			fmt.Printf("Vadc = %.3f V, Key = %s\n", voltage, key)
-			if key == "UP" {
-				if err := lcdClear(); err != nil {
+			// fmt.Printf("Vadc = %.3f V, Key = %s\n", voltage, key)
+			// if key == "UP" {
+			// 	if err := lcdClear(); err != nil {
 
-				}
-				if err := lcdWriteFontText3("UP PRESS", 0, 0); err != nil {
+			// 	}
+			// 	if err := lcdWriteFontText3("UP PRESS", 0, 0); err != nil {
 
-				}
-			}
-			if key == "ESC" {
-				if err := lcdClear(); err != nil {
+			// 	}
+			// }
+			// if key == "ESC" {
+			// 	if err := lcdClear(); err != nil {
 
-				}
-				if err := lcdWriteFontText3("ESC PRESS", 0, 0); err != nil {
+			// 	}
+			// 	if err := lcdWriteFontText3("ESC PRESS", 0, 0); err != nil {
 
-				}
-			}
-			if key == "ENT" {
-				if err := lcdClear(); err != nil {
+			// 	}
+			// }
+			// if key == "ENT" {
+			// 	if err := lcdClear(); err != nil {
 
-				}
-				if err := lcdWriteFontText3("ENT PRESS", 0, 0); err != nil {
+			// 	}
+			// 	if err := lcdWriteFontText3("ENT PRESS", 0, 0); err != nil {
 
-				}
-			}
-			if key == "DOWN" {
-				if err := lcdClear(); err != nil {
+			// 	}
+			// }
+			// if key == "DOWN" {
+			// 	if err := lcdClear(); err != nil {
 
-				}
-				if err := lcdWriteFontText3("DOWN PRESS", 0, 0); err != nil {
+			// 	}
+			// 	if err := lcdWriteFontText3("DOWN PRESS", 0, 0); err != nil {
 
-				}
-			}
-			if key == "NO_KEY" {
-				if err := page1(); err != nil {
+			// 	}
+			// }
+			// if key == "NO_KEY" {
+			// 	if err := page1(); err != nil {
 
-				}
-			}
+			// 	}
+			// }
+			keyMutex.Lock()
+			currentKey = key
+			keyMutex.Unlock()
 			lastKey = key
 		}
 

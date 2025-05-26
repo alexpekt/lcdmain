@@ -5,13 +5,13 @@ import (
 	"os"
 )
 
-func page1() error {
+func page11() error {
 
 	if err := lcdClear(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
 		os.Exit(1)
 	}
-	if err := lcdWriteFontText3("ESIL", 0, 0); err != nil {
+	if err := lcdWriteFontText3("ESIL2", 0, 0); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
 		os.Exit(1)
 	}
@@ -45,7 +45,7 @@ func page1() error {
 	// }
 	return nil
 }
-func page2() error {
+func page12() error {
 
 	if err := lcdClear(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
@@ -57,4 +57,44 @@ func page2() error {
 	}
 
 	return nil
+}
+
+func page1() error {
+	if err := lcdClear(); err != nil {
+		return err
+	}
+	if err := lcdWriteFontText3("PAGE 1", 0, 0); err != nil {
+		return err
+	}
+	return lcdWriteFontText3("IP: "+globalConfig.IP, 0, 1)
+}
+
+func page2() error {
+	if err := lcdClear(); err != nil {
+		return err
+	}
+	if err := lcdWriteFontText3("PAGE 2", 0, 0); err != nil {
+		return err
+	}
+	return lcdWriteFontText3("SET1: "+fmt.Sprintf("%v", globalConfig.Set1), 0, 1)
+}
+
+func page3() error {
+	if err := lcdClear(); err != nil {
+		return err
+	}
+	if err := lcdWriteFontText3("PAGE 3", 0, 0); err != nil {
+		return err
+	}
+	return lcdWriteFontText3("SET2: "+fmt.Sprintf("%v", globalConfig.Set2), 0, 1)
+}
+
+func page4() error {
+	if err := lcdClear(); err != nil {
+		return err
+	}
+	if err := lcdWriteFontText3("PAGE 4", 0, 0); err != nil {
+		return err
+	}
+	return lcdWriteFontText3("SET3: "+fmt.Sprintf("%v", globalConfig.Set3), 0, 1)
 }
