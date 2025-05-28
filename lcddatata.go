@@ -336,3 +336,24 @@ func cleanupGPIO() error {
 	}
 	return nil
 }
+func lcdWriteFontText3(text string, page, col int) error {
+	err := lcdSetPosition(page, col)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range text {
+		charData, ok := Font8[r]
+		if !ok {
+			charData = [8]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+		}
+
+		for _, b := range charData {
+			if err := lcdWriteData(b); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
