@@ -7,10 +7,10 @@ import (
 
 func page11() error {
 
-	if err := lcdClear(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
-		os.Exit(1)
-	}
+	// if err := lcdClear(); err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
+	// 	os.Exit(1)
+	// }
 	if err := lcdWriteFontText3("ESIL", 0, 0); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to clear LCD: %v\n", err)
 		os.Exit(1)
@@ -60,22 +60,22 @@ func page12() error {
 }
 
 func page1() error {
-	if err := lcdClear(); err != nil {
-		return err
-	}
+	// if err := lcdClear(); err != nil {
+	// 	return err
+	// }
 	if err := lcdWriteFontText3("PAGE 1", 0, 3); err != nil {
 		return err
 	}
-	if err := lcdWriteFontText3("IP:", 2, 0); err != nil {
+	if err := lcdWriteFontText3("IPP:", 2, 0); err != nil {
 		return err
 	}
 	return lcdWriteFontText3(globalConfig.IP, 3, 0)
 }
 
 func page2() error {
-	if err := lcdClear(); err != nil {
-		return err
-	}
+	// if err := lcdClear(); err != nil {
+	// 	return err
+	// }
 	if err := lcdWriteFontText3("PAGE 2", 0, 3); err != nil {
 		return err
 	}

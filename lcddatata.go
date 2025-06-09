@@ -177,7 +177,7 @@ func lcdWriteCmd(cmd uint8) error {
 	if err := lcdWriteByte(0); err != nil {
 		return err
 	}
-	time.Sleep(20 * time.Microsecond)
+	time.Sleep(10 * time.Microsecond)
 
 	if err := gpioA0.Write(0); err != nil {
 		return err
@@ -192,7 +192,7 @@ func lcdWriteCmd(cmd uint8) error {
 	if err := lcdWriteByte(cmd); err != nil {
 		return err
 	}
-	time.Sleep(20 * time.Microsecond)
+	time.Sleep(10 * time.Microsecond)
 	if err := gpioWR.Write(1); err != nil {
 		return err
 	}
@@ -212,15 +212,15 @@ func lcdInit() error {
 		return err
 	}
 
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	if err := gpioRES.Write(0); err != nil {
 		return err
 	}
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	if err := gpioRES.Write(1); err != nil {
 		return err
 	}
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	// Команды с исправленной ориентацией (0xA1, 0xC 00xA0, 0xC8){0xA0, 0xC8, 0xA2, 0x2F, 0x26, 0x81, 0x15, 0x40, 0xAF, 0xA6, 0xA4}
 	// commands := []uint8{0xA0, 0xC8, 0xA2, 0x2F, 0x26, 0x81, 0x15, 0x40, 0xAF, 0xA6, 0xA4}
@@ -231,7 +231,7 @@ func lcdInit() error {
 			return err
 		}
 		if cmd == 0xAF {
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		}
 	}
 
@@ -247,7 +247,7 @@ func lcdWriteData(dat uint8) error {
 	if err := lcdWriteByte(0); err != nil {
 		return err
 	}
-	time.Sleep(20 * time.Microsecond)
+	time.Sleep(2 * time.Microsecond)
 
 	if err := gpioA0.Write(1); err != nil {
 		return err
@@ -262,7 +262,7 @@ func lcdWriteData(dat uint8) error {
 	if err := lcdWriteByte(dat); err != nil {
 		return err
 	}
-	time.Sleep(20 * time.Microsecond)
+	time.Sleep(2 * time.Microsecond)
 
 	if err := gpioWR.Write(1); err != nil {
 		return err
@@ -334,5 +334,58 @@ func cleanupGPIO() error {
 			return fmt.Errorf("failed to unexport GPIO pin %d: %v", gpio.pin, err)
 		}
 	}
+	return nil
+}
+
+func lcdWriteFontText3(text string, page, col int) error {
+	err := lcdSetPosition(page, col)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range text {
+		charData, ok := Font8[r]
+		if !ok {
+
+			charData = [8]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+		}
+
+		for _, b := range charData {
+			if err := lcdWriteData(b); err != nil {
+				return err
+			}
+		}
+
+		// Добавить 1 байт пустоты между символами (опционально)
+		// if err := lcdWriteData(0x00); err != nil {
+		// 	return err
+		// }
+	}
+
+	return nil
+}
+
+func lcdWriteFontText4(text string, page, col int, invert bool) error {
+	err := lcdSetPosition(page, col)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range text {
+		charData, ok := Font8[r]
+		if !ok {
+			charData = [8]byte{}
+		}
+
+		for _, b := range charData {
+			if invert {
+				b = ^b
+			}
+			if err := lcdWriteData(b); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

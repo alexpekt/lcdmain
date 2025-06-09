@@ -3,38 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
 var globalConfig Config
 
-func lcdWriteFontText3(text string, page, col int) error {
-	err := lcdSetPosition(page, col)
-	if err != nil {
-		return err
-	}
-
-	for _, r := range text {
-		charData, ok := Font8[r]
-		if !ok {
-
-			charData = [8]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-		}
-
-		for _, b := range charData {
-			if err := lcdWriteData(b); err != nil {
-				return err
-			}
-		}
-
-		// Добавить 1 байт пустоты между символами (опционально)
-		// if err := lcdWriteData(0x00); err != nil {
-		// 	return err
-		// }
-	}
-
-	return nil
-}
 func GetCurrentKey() string {
 	keyMutex.Lock()
 	defer keyMutex.Unlock()
@@ -56,8 +31,6 @@ func main() {
 		return
 	}
 
-	// Используйте config.IP, config.Set1, config.Set2, config.Set3 в вашем коде
-	// fmt.Printf("IP: %s, Set1: %v, Set2: %v, Set3: %v\n", config.IP, config.Set1, config.Set2, config.Set3)
 	if err := lcdInitPins(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to initialize pins: %v\n", err)
 		os.Exit(1)
@@ -78,28 +51,66 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to page1: %v\n", err)
 		os.Exit(1)
 	}
-	// config.IP = "192.168.120.105" // Новое значение IP
-	err = SaveConfig(config, configFile)
-	if err != nil {
-		fmt.Printf("Ошибка при сохранении конфигурации: %v\n", err)
-		return
-	}
 
 	pages := []func() error{page1, page2, page3, page4}
 
 	currentPage := 0
 	selected := false // false = режим просмотра, true = режим выбора
-
-	// Отображаем дефолтную страницу page11()
-	if err := page11(); err != nil {
-		fmt.Fprintf(os.Stderr, "Ошибка при запуске page11: %v\n", err)
-		os.Exit(1)
-	}
+	editingIP := false
+	ipParts := strings.Split(globalConfig.IP, ".")
+	currentIPPart := 0
 
 	for {
 		key := GetCurrentKey()
 
-		if selected {
+		if editingIP {
+			// Режим редактирования IP
+			switch key {
+			case "UP":
+				// Увеличиваем текущую часть IP
+				part, _ := strconv.Atoi(ipParts[currentIPPart])
+				part++
+				if part > 255 {
+					part = 0
+				}
+				ipParts[currentIPPart] = strconv.Itoa(part)
+				displayIPEditing(ipParts, currentIPPart)
+
+			case "DOWN":
+				// Уменьшаем текущую часть IP
+				part, _ := strconv.Atoi(ipParts[currentIPPart])
+				part--
+				if part < 0 {
+					part = 255
+				}
+				ipParts[currentIPPart] = strconv.Itoa(part)
+				displayIPEditing(ipParts, currentIPPart)
+
+			case "ENT":
+				// Переходим к следующей части IP или сохраняем
+				currentIPPart++
+				if currentIPPart >= len(ipParts) {
+					// Сохраняем новый IP
+					globalConfig.IP = strings.Join(ipParts, ".")
+					err = SaveConfig(globalConfig, configFile)
+					if err != nil {
+						fmt.Printf("Ошибка при сохранении конфигурации: %v\n", err)
+					}
+					editingIP = false
+					_ = lcdClear()
+					_ = page11()
+					continue
+				}
+				displayIPEditing(ipParts, currentIPPart)
+
+			case "ESC":
+				// Отмена редактирования
+				editingIP = false
+				_ = lcdClear()
+				_ = page11()
+			}
+		} else if selected {
+			// Режим выбора страницы
 			switch key {
 			case "UP":
 				currentPage++
@@ -107,7 +118,7 @@ func main() {
 					currentPage = 0
 				}
 				_ = lcdClear()
-				_ = pages[currentPage]() // сразу отображаем страницу
+				_ = pages[currentPage]()
 
 			case "DOWN":
 				currentPage--
@@ -115,21 +126,27 @@ func main() {
 					currentPage = len(pages) - 1
 				}
 				_ = lcdClear()
-				_ = pages[currentPage]() // сразу отображаем страницу
+				_ = pages[currentPage]()
 
 			case "ENT":
-				// подтверждение — просто остаёмся на текущей странице и выходим из выбора
-				selected = false
+				// Если на странице page1 (предполагаем, что это страница с IP), начинаем редактирование
+				if currentPage == 0 {
+					editingIP = true
+					ipParts = strings.Split(globalConfig.IP, ".")
+					currentIPPart = 0
+					displayIPEditing(ipParts, currentIPPart)
+				} else {
+					selected = false
+				}
 
 			case "ESC":
-				// отмена выбора — возврат на дефолтную page11
 				selected = false
 				_ = lcdClear()
 				_ = page11()
 			}
 		} else {
+			// Основной режим
 			if key == "ENT" {
-				// вход в режим выбора и сразу показываем текущую страницу
 				selected = true
 				_ = lcdClear()
 				_ = pages[currentPage]()
@@ -138,41 +155,29 @@ func main() {
 
 		time.Sleep(100 * time.Millisecond)
 	}
-
 }
 
-// if err := mainkey(); err != nil {
-// 	fmt.Fprintf(os.Stderr, "Failed to page1: %v\n", err)
-// 	os.Exit(1)
-// }
-// for {
-// 	key := GetCurrentKey()
-// 	if key != "" {
-// 		// fmt.Println("Текущее состояние клавиши:", key)
-// 	}
+func displayIPEditing(ipParts []string, currentPart int) error {
+	if err := lcdClear(); err != nil {
+		return err
+	}
 
-// 	// Можно выполнять действия в зависимости от нажатия:
-// 	if key == "ENT" {
-// 		_ = page12()
+	// Отображаем IP с выделением редактируемой части
+	line1 := "Edit IP:"
+	line2 := ""
+	for i, part := range ipParts {
+		if i == currentPart {
+			line2 += "|" + part + "|"
+		} else {
+			line2 += part
+		}
+		if i < len(ipParts)-1 {
+			line2 += "."
+		}
+	}
 
-// 	}
-// 	time.Sleep(500 * time.Millisecond)
-// }
-
-// key := GetCurrentKey()
-// switch key {
-// case "UP":
-// 	_ = lcdClear()
-// 	_ = lcdWriteFontText3("UP PRESS", 0, 0)
-// case "ESC":
-// 	_ = lcdClear()
-// 	_ = lcdWriteFontText3("ESC PRESS", 0, 0)
-// case "ENT":
-// 	_ = lcdClear()
-// 	_ = lcdWriteFontText3("ENT PRESS", 0, 0)
-// case "DOWN":
-// 	_ = lcdClear()
-// 	_ = lcdWriteFontText3("DOWN PRESS", 0, 0)
-// case "NO_KEY":
-// 	_ = page1()
-// }
+	if err := lcdWriteFontText3(line1, 0, 0); err != nil {
+		return err
+	}
+	return lcdWriteFontText3(line2, 3, 0)
+}
